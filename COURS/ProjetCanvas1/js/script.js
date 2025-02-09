@@ -17,4 +17,3 @@ async function init() {
     // on peut démarrer le jeu
     game.start();
 }
-

@@ -3,6 +3,7 @@ import Obstacle from "./Obstacle.js";
 import ObjetSouris from "./ObjetSouris.js";
 import { rectsOverlap } from "./collisions.js";
 import { initListeners } from "./ecouteurs.js";
+import Sortie from "./Sortie.js";
 export default class Game {
     objetsGraphiques = [];
 
@@ -13,31 +14,21 @@ export default class Game {
             mouseX: 0,
             mouseY: 0,
         };
+        this.sortie = null;
+        this.level = null;
     }
 
     async init(canvas) {
         this.ctx = this.canvas.getContext("2d");
 
-        this.player = new Player(100, 100);
-        this.objetsGraphiques.push(this.player);
-
-        // Un objert qui suite la souris, juste pour tester
-        this.objetSouris = new ObjetSouris(200, 200, 25, 25, "orange");
-        this.objetsGraphiques.push(this.objetSouris);
-
-
-        // On cree deux obstacles
-        let obstacle1 = new Obstacle(300, 0, 40, 600, "red");
-        this.objetsGraphiques.push(obstacle1);
-        let obstacle2 = new Obstacle(500, 500, 100, 100, "blue");
-        this.objetsGraphiques.push(obstacle2);
-
-        // On ajoute la sortie
-        // TODO
-
         // On initialise les écouteurs de touches, souris, etc.
+        this.inputStates = {};
         initListeners(this.inputStates, this.canvas);
 
+        this.player = new Player(0, 0);
+
+        this.level = 1;
+        this.initLevel();
         console.log("Game initialisé");
     }
 
@@ -77,36 +68,50 @@ export default class Game {
         // donc tous les 1/60 de seconde
         
         // Déplacement du joueur. 
-        this.movePlayer();
-
+        if (this.player != null) {
+            this.movePlayer();
+        }
         // on met à jouer la position de objetSouris avec la position de la souris
         // Pour un objet qui "suit" la souris mais avec un temps de retard, voir l'exemple
         // du projet "charQuiTire" dans le dossier COURS
-        this.objetSouris.x = this.inputStates.mouseX;
-        this.objetSouris.y = this.inputStates.mouseY;
-
-        // On regarde si le joueur a atteint la sortie
-        // TODO
-
+        if (this.objetSouris != null) {
+            this.objetSouris.x = this.inputStates.mouseX;
+            this.objetSouris.y = this.inputStates.mouseY;
+        }
+       // On regarde si le joueur a atteint la sortie
+        if (this.sortie!=null) {
+            if (rectsOverlap(this.player.x-this.player.w/2, this.player.y - this.player.h/2, this.player.w, this.player.h, this.sortie.x, this.sortie.y, this.sortie.w, this.sortie.h)) {
+                console.log("Niveau réussi");
+                this.level++;
+                this.initLevel();
+            }
+        }
     }
 
     movePlayer() {
         this.player.vitesseX = 0;
         this.player.vitesseY = 0;
         
-        if(this.inputStates.ArrowRight) {
-            this.player.vitesseX = 3;
+        let right = this.inputStates.ArrowRight || this.inputStates.d
+        let left = this.inputStates.ArrowLeft || this.inputStates.q
+        let up = this.inputStates.ArrowUp || this.inputStates.z
+        let down =  this.inputStates.ArrowDown || this.inputStates.s
+
+        // Quand on se déplace en diagonale, on a une vitesse x et y qui est divisé par racine de 2
+
+        if(right) {
+            this.player.vitesseX = this.player.vit / (up || down ? Math.sqrt(2) : 1);
         } 
-        if(this.inputStates.ArrowLeft) {
-            this.player.vitesseX = -3;
+        if(left) {
+            this.player.vitesseX = -this.player.vit / (up || down ? Math.sqrt(2) : 1);
         } 
 
-        if(this.inputStates.ArrowUp) {
-            this.player.vitesseY = -3;
+        if(up) {
+            this.player.vitesseY = -this.player.vit / (left || right ? Math.sqrt(2) : 1);
         } 
 
-        if(this.inputStates.ArrowDown) {
-            this.player.vitesseY = 3;
+        if(down) {
+            this.player.vitesseY = this.player.vit / (left || right ? Math.sqrt(2) : 1);
         } 
 
         this.player.move();
@@ -119,7 +124,7 @@ export default class Game {
         this.testCollisionPlayerBordsEcran();
 
         // Teste collision avec les obstacles
-        this.testCollisionPlayerObstacles();
+        this.testCollisionPlayer();
        
     }
 
@@ -149,10 +154,10 @@ export default class Game {
         }
     }
 
-    testCollisionPlayerObstacles() {
+    testCollisionPlayer() {
         this.objetsGraphiques.forEach(obj => {
             if(obj instanceof Obstacle) {
-                if(rectsOverlap(this.player.x-this.player.w/2, this.player.y - this.player.h/2, this.player.w, this.player.h, obj.x, obj.y, obj.w, obj.h)) {
+                if (rectsOverlap(this.player.x-this.player.w/2, this.player.y - this.player.h/2, this.player.w, this.player.h, obj.x, obj.y, obj.w, obj.h)) {
                     // collision
 
                     // ICI TEST BASIQUE QUI ARRETE LE JOUEUR EN CAS DE COLLIION.
@@ -162,15 +167,131 @@ export default class Game {
                     // etc.
                     // Dans ce cas on pourrait savoir comment le joueur est entré en collision avec l'obstacle et réagir en conséquence
                     // par exemple en le repoussant dans la direction opposée à celle de l'obstacle...
-                    // Là par défaut on le renvoie en x=10 y=10 et on l'arrête
-                    console.log("Collision avec obstacle");
-                    this.player.x = 10;
-                    this.player.y = 10;
-                    this.player.vitesseX = 0;
-                    this.player.vitesseY = 0;
+                    // Là par défaut on le renvoie en x=100 y=100 et on l'arrête
+                    this.initLevel();
                 }
             }
         });
+    }
+
+    
+    initLevel() {
+        // Un objert qui suite la souris, juste pour tester
+        // this.objetSouris = new ObjetSouris(200, 200, 25, 25, "orange");
+        // this.objetsGraphiques.push(this.objetSouris);
+
+        this.sortie = null;
+        this.objetsGraphiques = [];
+        this.player.init();
+        this.objetsGraphiques.push(this.player);
+        
+        document.querySelector("#level").innerHTML = "Niveau : " + this.level;
+        switch(this.level) {
+            case 1:
+                this.player.x = 20;
+                this.player.y = 20;
+
+                this.objetsGraphiques.push(new Obstacle(240, 0, 40, 160, "brown"));
+                this.objetsGraphiques.push(new Obstacle(0, 360, 560, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(520, 200, 40, 160, "brown"));
+                this.objetsGraphiques.push(new Obstacle(200, 560, 600, 40, "brown"));
+
+                // On ajoute la sortie
+                this.sortie = new Sortie(760, 760, 40, 40, "green");
+                this.objetsGraphiques.push(this.sortie);
+                break;
+            case 2:
+                this.player.x = 20;
+                this.player.y = 20;
+
+                this.objetsGraphiques.push(new Obstacle(80, 0, 40, 40, "brown"));
+
+                this.objetsGraphiques.push(new Obstacle(680, 0, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(80, 40, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(160, 80, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(240, 120, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(320, 160, 160, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(600, 40, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(520, 80, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(440, 120, 120, 40, "brown"));
+                
+                
+                this.objetsGraphiques.push(new Obstacle(0, 200, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(80, 240, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(160, 280, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(240, 320, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(320, 360, 160, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(600, 240, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(520, 280, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(440, 320, 120, 40, "brown"));
+
+
+                this.objetsGraphiques.push(new Obstacle(680, 400, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(80, 440, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(160, 480, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(240, 520, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(320, 560, 160, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(600, 440, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(520, 480, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(440, 520, 120, 40, "brown"));
+
+                
+                this.objetsGraphiques.push(new Obstacle(0, 600, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(80, 640, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(160, 680, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(240, 720, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(320, 760, 160, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(600, 640, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(520, 680, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(440, 720, 120, 40, "brown"));
+                
+
+                // On ajoute la sortie
+                this.sortie = new Sortie(760, 760, 40, 40, "green");
+                this.objetsGraphiques.push(this.sortie);
+                break;
+            case 3:
+                this.player.x = 20;
+                this.player.y = 20;
+
+                this.objetsGraphiques.push(new Obstacle(80, 0, 40, 100, "brown"));
+                this.objetsGraphiques.push(new Obstacle(0, 180, 240, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(240, 100, 40, 200, "brown"));
+
+                this.objetsGraphiques.push(new Obstacle(400, 0, 40, 360, "brown"));
+                this.objetsGraphiques.push(new Obstacle(400, 400, 40, 320, "brown"));
+
+                this.objetsGraphiques.push(new Obstacle(160, 400, 240, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(160, 400, 40, 240, "brown"));
+                this.objetsGraphiques.push(new Obstacle(280, 400, 40, 240, "brown"));
+                
+                this.objetsGraphiques.push(new Obstacle(40, 320, 40, 440, "brown"));
+                this.objetsGraphiques.push(new Obstacle(80, 720, 200, 40, "brown"));
+                
+                this.objetsGraphiques.push(new Obstacle(440, 400, 240, 40, "brown"));
+
+                this.objetsGraphiques.push(new Obstacle(520, 520, 160, 160, "brown"));
+                
+                this.objetsGraphiques.push(new Obstacle(720, 560, 40, 160, "brown"));
+                this.objetsGraphiques.push(new Obstacle(560, 720, 200, 40, "brown"));
+
+                this.objetsGraphiques.push(new Obstacle(440, 320, 80, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(560, 320, 40, 80, "brown"));
+
+                this.objetsGraphiques.push(new Obstacle(520, 40, 200, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(720, 40, 40, 200, "brown"));
+                this.objetsGraphiques.push(new Obstacle(600, 200, 120, 40, "brown"));
+                this.objetsGraphiques.push(new Obstacle(560, 200, 40, 120, "brown"));
+
+                // On ajoute la sortie
+                this.sortie = new Sortie(640, 120, 40, 40, "green");
+                this.objetsGraphiques.push(this.sortie);
+                break;
+            default:
+                alert("Bravo, vous avez fini le jeu !");
+                this.init();
+                break;
+        }
     }
 
 }

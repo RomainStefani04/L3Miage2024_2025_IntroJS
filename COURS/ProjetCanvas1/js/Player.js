@@ -3,11 +3,20 @@ import { drawCircleImmediat } from "./utils.js";
 
 export default class Player extends ObjectGraphique {
     constructor(x, y) {
-        super(x, y, 100, 100);
+        super(x, y, 30, 30);
         this.vitesseX = 0;
         this.vitesseY = 0;
-        this.couleur = "pink";
         this.angle = 0;
+        this.vit = 2;
+    }
+
+    init() {
+        this.h = 30;
+        this.w = 30;
+        this.vitesseX = 0;
+        this.vitesseY = 0;
+        this.angle = 0;
+        this.vit = 2;
     }
 
     draw(ctx) {
@@ -27,22 +36,51 @@ export default class Player extends ObjectGraphique {
         ctx.translate(-this.w / 2, -this.h / 2);
         //this.ctx.scale(0.5, 0.5);
 
-        // tete du monstre
-        ctx.fillStyle = "pink";
-        ctx.fillRect(0, 0, this.w, this.h);
-        // yeux
-        drawCircleImmediat(ctx, 20, 20, 10, "red");
-        drawCircleImmediat(ctx, 60, 20, 10, "red");
+        // Hitbox du personnage pour debug
+        // ctx.strokeStyle = "black";
+        // ctx.lineWidth = 1;
+        // ctx.strokeRect(0, 0, this.w, this.h);
 
-        // Les bras
-        //this.drawBrasGauche();
+        let multHeight = this.h/100;
+
+        // Dessin du monstre
+        ctx.fillStyle = "#cb957b";
+        ctx.fillRect(this.w/2 - 42.5*multHeight, this.h/2 - 25*multHeight, 85*multHeight, 70*multHeight);
+
+        // pieds
+        ctx.fillStyle = "#753c13";
+        ctx.fillRect(0, this.h - 20*multHeight, 35*multHeight, 20*multHeight);
+
+        ctx.fillStyle = "#753c13";
+        ctx.fillRect(this.w - 35*multHeight, this.h - 20*multHeight, 35*multHeight, 20*multHeight);
+
+        // yeux
+        ctx.fillStyle = "white";
+        ctx.fillRect(this.w/2 - 25*multHeight, this.h/2 - 5*multHeight, 20*multHeight, 10*multHeight);
+
+        ctx.fillStyle = "#6fa4f3";
+        ctx.fillRect(this.w/2 - 19*multHeight, this.h/2 - 2*multHeight, 10*multHeight, 5*multHeight);
+
+        ctx.fillStyle = "white";
+        ctx.fillRect(this.w/2 + 5*multHeight, this.h/2 - 5*multHeight, 20*multHeight, 10*multHeight);
+
+        ctx.fillStyle = "#6fa4f3";
+        ctx.fillRect(this.w/2 + 11*multHeight, this.h/2 - 2*multHeight, 10*multHeight, 5*multHeight);
+
+        // bouche
+        ctx.fillStyle = "black";
+        ctx.fillRect(this.w/2 - 8*multHeight, this.h/2 + 19*multHeight, 20*multHeight, 4*multHeight);
+
+        // chapeau
+        ctx.fillStyle = "#89837c";
+        ctx.fillRect(0, 0, 100*multHeight, 40*multHeight);
 
         // restore
         ctx.restore();
 
         // super.draw() dessine une croix à la position x, y
         // pour debug
-        super.draw(ctx);
+        // super.draw(ctx);
     }
 
     move() {

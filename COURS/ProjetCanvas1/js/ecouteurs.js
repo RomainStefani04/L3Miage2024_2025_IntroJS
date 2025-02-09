@@ -13,6 +13,18 @@ function initListeners(inputStates, canvas) {
         if(event.key === "ArrowDown") {
             inputStates.ArrowDown = true;
         }
+        if (event.key === "z" || event.key === "Z") {
+            inputStates.z = true;
+        }
+        if (event.key === "s" || event.key === "S") {
+            inputStates.s = true;
+        }
+        if (event.key === "q" || event.key === "Q") {
+            inputStates.q = true;
+        }
+        if (event.key === "d" || event.key === "D") {
+            inputStates.d = true;
+        }
     }
 
     window.onkeyup = (event) => {
@@ -28,6 +40,18 @@ function initListeners(inputStates, canvas) {
         }
         if(event.key === "ArrowDown") {
             inputStates.ArrowDown = false;
+        }
+        if (event.key === "z" || event.key === "Z") {
+            inputStates.z = false;
+        }
+        if (event.key === "s" || event.key === "S") {
+            inputStates.s = false;
+        }
+        if (event.key === "q" || event.key === "Q") {
+            inputStates.q = false;
+        }
+        if (event.key === "d" || event.key === "D") {
+            inputStates.d = false;
         }
     }
 
